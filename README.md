@@ -25,6 +25,5 @@ FEEDBACK
 
 I wrote this in 30 minutes whilst my baby was vomiting all over Mummy, as a joke-ish script, see: https://biomickwatson.wordpress.com/2015/04/21/excited-by-bacterial-dna-in-sweet-potatoes-check-this-out/
 
-Are you whining about the script?  If you're from Dundee - it's expected, please carry on :-)  If you're not from Dundee, feel free to improve it :-)
 
 
