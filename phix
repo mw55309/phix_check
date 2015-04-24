@@ -1,0 +1,80 @@
+#!/usr/bin/env/perl
+
+# check for bwa
+my $bwa = undef;
+
+# if we have a copy in this directry already
+if (-e "./bwa-0.7.12/bwa") {
+	$bwa = "./bwa-0.7.12/bwa";
+} else {
+	$bwa = `which bwa 2>&1`;
+	chomp($bwa);
+}
+
+# get BWA if we haven't found it
+if ($bwa =~ /^which: no/) {
+        $bwa = getBWA();
+} 
+
+# check for MEM
+my $mem = `$bwa 2>&1 | grep BWA-MEM`;
+chomp($mem);
+
+unless ($mem =~ m/BWA-MEM/) {
+        $bwa = getBWA();
+}
+
+#print "bwa is $bwa\n";
+#exit;
+
+# get PhiX
+system("wget -q -O NC_001422.$$.fna ftp://ftp.ncbi.nlm.nih.gov/genomes/Viruses/Enterobacteria_phage_phiX174_sensu_lato_uid14015/NC_001422.fna");
+
+unless(-e "NC_001422.$$.fna") {
+	warn "Unable to download PhiX174\n";
+	exit;
+}
+
+# try to build index
+system("$bwa index -a is NC_001422.$$.fna 2>/dev/null");
+unless (-e "NC_001422.$$.fna.pac") {
+	warn "Unable to create bwa index\n";
+	exit;
+}
+
+#check for PhiX
+my $fastq = shift;
+my $cat = "cat";
+if ($fastq =~ m/\.gz/) {
+	$cat = "zcat";
+}
+
+my $sample = 10000;
+my $limit  = $sample * 4;
+
+my $cmd = "$bwa mem -M NC_001422.$$.fna <($cat $fastq | head -n $limit) 2>/dev/null | awk '\\\$3 != \\\"*\\\"' | awk '\\\$2 <= 16' | grep -v \^\@ | wc -l";
+
+#print "cmd is $cmd\n";
+my $phixcount = `/bin/bash -c \"$cmd\"`;
+chomp($phixcount);
+
+print "PhiX: $phixcount reads out of $sample (", sprintf("%.2f", ($phixcount/$sample)*100), "\%)\n";
+
+# clean up
+system("rm NC_001422.$$.fna*");
+
+sub getBWA {
+
+        # attempt to download
+        system("wget -q http://downloads.sourceforge.net/sourceforge/bio-bwa/bwa-0.7.12.tar.bz2");
+
+        # unzip
+        system("bunzip2 < bwa-0.7.12.tar.bz2 | tar xvf - 2>/dev/null 1>/dev/null");
+
+        # install
+        chdir("bwa-0.7.12");
+        system("make 2>/dev/null 1>/dev/null");
+        chdir("..");
+
+	return("./bwa-0.7.12/bwa");
+}
