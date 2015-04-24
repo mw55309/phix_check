@@ -24,9 +24,6 @@ unless ($mem =~ m/BWA-MEM/) {
         $bwa = getBWA();
 }
 
-#print "bwa is $bwa\n";
-#exit;
-
 # get PhiX
 system("wget -q -O NC_001422.$$.fna ftp://ftp.ncbi.nlm.nih.gov/genomes/Viruses/Enterobacteria_phage_phiX174_sensu_lato_uid14015/NC_001422.fna");
 
@@ -42,19 +39,19 @@ unless (-e "NC_001422.$$.fna.pac") {
 	exit;
 }
 
-#check for PhiX
+#check if fastq is zipped
 my $fastq = shift;
 my $cat = "cat";
 if ($fastq =~ m/\.gz/) {
 	$cat = "zcat";
 }
 
+# sample 10000 reads
 my $sample = 10000;
 my $limit  = $sample * 4;
 
 my $cmd = "$bwa mem -M NC_001422.$$.fna <($cat $fastq | head -n $limit) 2>/dev/null | awk '\\\$3 != \\\"*\\\"' | awk '\\\$2 <= 16' | grep -v \^\@ | wc -l";
 
-#print "cmd is $cmd\n";
 my $phixcount = `/bin/bash -c \"$cmd\"`;
 chomp($phixcount);
 
